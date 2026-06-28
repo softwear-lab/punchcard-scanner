@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punchcard Scanner | Grid Digitizer & Scanner</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <span class="logo-icon">📸</span>
+                <h1>Punchcard <span class="highlight">Scanner</span></h1>
+                <span class="badge">Grid Digitizer & Scanner</span>
+            </div>
+            <p class="subtitle">Convert photos of physical punchcards and charts into 1-to-1 pixel binary charts</p>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard">
+            <!-- Sidebar: Controls & Settings -->
+            <aside class="control-panel glass">
+                <section class="panel-section">
+                    <h2><span class="step-num">1</span> Import Photo</h2>
+                    <div class="drop-zone" id="digitizer-drop-zone">
+                        <input type="file" id="digitizer-file-input" accept="image/*" class="file-input">
+                        <div class="drop-zone-content">
+                            <span class="upload-icon">📥</span>
+                            <p class="main-text">Upload Grid Photo</p>
+                            <p class="sub-text">Drag & Drop or click to browse</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-section">
+                    <h2><span class="step-num">2</span> Grid Size</h2>
+                    <div class="gauge-inputs">
+                        <div class="input-pair">
+                            <label>Columns (Stitches)</label>
+                            <input type="number" id="digi-cols" value="24" min="2" max="200">
+                        </div>
+                        <div class="input-pair">
+                            <label>Rows (Height)</label>
+                            <input type="number" id="digi-rows" value="60" min="2" max="500">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-section">
+                    <h2><span class="step-num">3</span> Image Tuning</h2>
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Scan Threshold</span>
+                            <span id="digi-threshold-val">128</span>
+                        </div>
+                        <input type="range" id="digi-threshold-slider" min="0" max="255" value="128">
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Sampling Width</span>
+                            <span id="digi-radius-val">3px</span>
+                        </div>
+                        <input type="range" id="digi-radius-slider" min="1" max="15" value="3">
+                    </div>
+                </section>
+
+                <section class="panel-section">
+                    <h2><span class="step-num">4</span> Export Grid</h2>
+                    <div class="export-actions">
+                        <button class="btn btn-primary" id="btn-download-digitized" disabled style="width: 100%; justify-content: center;">
+                            <span class="btn-icon">💾</span> Download Scanned PNG
+                        </button>
+                    </div>
+                    <p class="info-note">Downloads a 1-bit indexed B&W PNG at exactly the specified columns x rows size (e.g. 24x60 pixels).</p>
+                </section>
+                
+                <footer class="sidebar-footer">
+                    <button class="nav-link" id="btn-help" type="button">❓ Help & Instructions</button>
+                </footer>
+            </aside>
+
+            <!-- Main Workspace: Corner Calibrator & Preview -->
+            <div class="workspace-area">
+                <div class="visualizer-grid">
+                    <div class="visualizer-card glass">
+                        <div class="card-header-row">
+                            <div>
+                                <h3>1. Align Corner Pins</h3>
+                                <p class="card-desc">Drag the circular handles to the corners of the grid in your photo.</p>
+                            </div>
+                            <div class="preview-header-actions">
+                                <button id="btn-auto-detect" class="btn btn-secondary btn-xs" type="button" disabled>Auto-Detect</button>
+                            </div>
+                        </div>
+                        <div class="canvas-container digi-input-container">
+                            <canvas id="canvas-digitizer-source"></canvas>
+                            <div class="canvas-placeholder" id="digi-src-placeholder">Upload a photo to calibrate corners</div>
+                        </div>
+                    </div>
+
+                    <div class="visualizer-card glass">
+                        <div class="card-header-row">
+                            <div>
+                                <h3>2. Digitized Grid Preview</h3>
+                                <p class="card-desc">Calculated binary cells. Darker areas become black pixels.</p>
+                            </div>
+                            <div class="preview-header-actions">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-gridlines" checked>
+                                    <span class="checkbox-label">Show Gridlines</span>
+                                </label>
+                                <div id="edit-mode-status" class="edit-status-banner hidden">
+                                    <span class="edit-status-badge">✏️ Edit Mode Active</span>
+                                    <button id="btn-reset-scan" class="btn btn-secondary btn-xs" type="button">Reset to Scan</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="canvas-container digi-preview-container">
+                            <canvas id="canvas-digitizer-preview"></canvas>
+                            <div class="canvas-placeholder" id="digi-prev-placeholder">Scanned pattern preview</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Help Modal Overlay -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <button class="modal-close" id="btn-close-modal" type="button" aria-label="Close modal">&times;</button>
+            <h2>📖 How to Use Punchcard Scanner</h2>
+            <div class="modal-body">
+                <div class="help-step">
+                    <span class="help-emoji">📥</span>
+                    <div class="help-text">
+                        <h3>1. Import Photo</h3>
+                        <p>Drag & drop or click to upload a photo of your physical punchcard or chart.</p>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-emoji">📏</span>
+                    <div class="help-text">
+                        <h3>2. Set Grid Size</h3>
+                        <p>Enter the exact columns (stitches) and rows (height) of your physical punchcard (e.g., 24 columns for standard Brother punchcards).</p>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-emoji">📍</span>
+                    <div class="help-text">
+                        <h3>3. Align Corner Pins</h3>
+                        <p>The app will attempt to automatically find the grid corners on upload. You can re-trigger this with the <strong>Auto-Detect</strong> button, or manually drag the handles (TL, TR, BL, BR) for pixel-perfect alignment.</p>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-emoji">⚙️</span>
+                    <div class="help-text">
+                        <h3>4. Image Tuning</h3>
+                        <p>Adjust the <strong>Scan Threshold</strong> (darkness cutoff) and <strong>Sampling Width</strong> (pixel averaging size) until the preview correctly detects your card's holes.</p>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-emoji">✏️</span>
+                    <div class="help-text">
+                        <h3>5. Manual Corrections (Optional)</h3>
+                        <p>Click any cell in the preview grid to toggle its value, or click-and-drag to paint/erase multiple cells. This activates <strong>Edit Mode</strong>, locking calibration handles and settings to safeguard your edits. Click <strong>Reset to Scan</strong> to discard your manual edits and unlock controls.</p>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-emoji">💾</span>
+                    <div class="help-text">
+                        <h3>6. Export Grid</h3>
+                        <p>Download the scanned PNG. The exported image will be exactly the specified dimensions in pixels (e.g. 24x60), ready for AYAB mapping!</p>
+                    </div>
+                </div>
+                <!-- Tips for Auto-Detection -->
+                <div class="help-tips">
+                    <h4>💡 Tips for Best Auto-Detection</h4>
+                    <ul>
+                        <li><strong>Contrasting Background</strong>: Place your light-colored punchcard on a dark table or surface.</li>
+                        <li><strong>Good Lighting</strong>: Avoid heavy shadows or bright glares over the card's corners.</li>
+                        <li><strong>Full View</strong>: Ensure all four corners are completely visible inside the photo frame.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">✨</span>
+        <span class="toast-message">Image loaded successfully!</span>
+    </div>
+
+    <script src="app.js?v=1"></script>
+</body>
+</html>
