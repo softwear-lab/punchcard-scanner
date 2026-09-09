@@ -39,6 +39,84 @@
     --transition: all 0.15s ease;
 }
 
+/* Light Theme Variables & Component Overrides (Softwear Lab Neo-CLI) */
+html[data-theme="light"],
+[data-theme="light"] {
+    --bg-primary: #f6f8fa;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f3f4f6;
+    --border: #d0d7de;
+    --border-light: #d0d7de;
+    --border-focus: #0969da;
+    
+    --cyan: #0969da;
+    --green: #1a7f37;
+    --rose: #cf222e;
+    --amber: #9a6700;
+    
+    --accent-primary: #0969da;
+    --accent-indigo: #0969da;
+    --accent-success: #1a7f37;
+    --accent-warning: #9a6700;
+    --accent-error: #cf222e;
+    
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
+    --text-muted: #8c959f;
+}
+
+[data-theme="light"] body {
+    background-color: #f6f8fa;
+    color: #24292f;
+}
+
+[data-theme="light"] .canvas-container {
+    background-color: #f6f8fa;
+    background-image: 
+        linear-gradient(45deg, #e1e4e8 25%, transparent 25%), 
+        linear-gradient(-45deg, #e1e4e8 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #e1e4e8 75%), 
+        linear-gradient(-45deg, transparent 75%, #e1e4e8 75%);
+}
+
+[data-theme="light"] .theme-toggle-btn {
+    background: #ffffff;
+    border-color: #d0d7de;
+    color: #57606a;
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+    border-color: #0969da;
+    color: #0969da;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    transition: var(--transition);
+    padding: 0;
+    user-select: none;
+    margin-left: auto;
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background-color: var(--bg-card-hover);
+}
+
 /* --- Resets & Base --- */
 * {
     box-sizing: border-box;

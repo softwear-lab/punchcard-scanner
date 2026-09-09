@@ -167,10 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const br = digiHandles[3];
         
         const cols = parseInt(digiColsInput.value) || 24;
-        const rows = parseInt(digiRowsInput.value) || 60;
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         
         // Guidelines grid lines
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'; // cyan grid overlay
+        ctx.strokeStyle = isLight ? 'rgba(9, 105, 218, 0.45)' : 'rgba(56, 189, 248, 0.4)'; // cyan/blue grid overlay
         ctx.lineWidth = 1.0;
         
         // Columns
@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
         }
         
-        // Boundary border (rose)
-        ctx.strokeStyle = 'rgba(244, 63, 94, 0.85)';
+        // Boundary border
+        ctx.strokeStyle = isLight ? 'rgba(207, 34, 46, 0.85)' : 'rgba(244, 63, 94, 0.85)';
         ctx.lineWidth = 2.0;
         ctx.beginPath();
         ctx.moveTo(tl.x, tl.y);
@@ -214,8 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Drag handles
         digiHandles.forEach((h, idx) => {
-            ctx.fillStyle = activeDigiHandle === idx ? '#f43f5e' : '#38bdf8';
-            ctx.strokeStyle = '#0d1117';
+            ctx.fillStyle = activeDigiHandle === idx ? (isLight ? '#cf222e' : '#f43f5e') : (isLight ? '#0969da' : '#38bdf8');
+            ctx.strokeStyle = isLight ? '#ffffff' : '#0d1117';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(h.x, h.y, 8, 0, 2 * Math.PI);
@@ -223,9 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
             
             // Labels
-            ctx.fillStyle = '#f0f6fc';
+            ctx.fillStyle = isLight ? '#24292f' : '#f0f6fc';
             ctx.font = 'bold 11px "JetBrains Mono", monospace';
-            ctx.shadowColor = '#000000';
+            ctx.shadowColor = isLight ? '#ffffff' : '#000000';
             ctx.shadowBlur = 4;
             ctx.fillText(h.label, h.x + 10, h.y + 4);
             ctx.shadowBlur = 0;
@@ -709,5 +709,91 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // --- Umami Analytics Event Helper ---
+    function trackEvent(eventName, eventData = {}) {
+        if (window.umami && typeof window.umami.track === 'function') {
+            try {
+                window.umami.track(eventName, eventData);
+            } catch (err) {}
+        }
+    }
+
+    // --- Dark/Light Theme System ---
+    let currentTheme = 'dark';
+
+    function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        if (document.body) {
+            document.body.setAttribute('data-theme', theme);
+        }
+
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (e) {
+            try {
+                sessionStorage.setItem('theme', theme);
+            } catch (e2) {}
+        }
+
+        const toggleBtn = document.getElementById('theme-toggle-btn');
+        if (toggleBtn) {
+            if (theme === 'light') {
+                toggleBtn.textContent = '🌙';
+                toggleBtn.setAttribute('title', 'Switch to Dark Theme');
+                toggleBtn.setAttribute('aria-label', 'Switch to Dark Theme');
+            } else {
+                toggleBtn.textContent = '☀️';
+                toggleBtn.setAttribute('title', 'Switch to Light Theme');
+                toggleBtn.setAttribute('aria-label', 'Switch to Light Theme');
+            }
+        }
+
+        // Re-render guidelines if photo loaded
+        if (typeof drawDigitizerOverlay === 'function' && digiImage) {
+            drawDigitizerOverlay();
+        }
+    }
+
+    function toggleTheme() {
+        const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+        trackEvent('toggle-theme', { theme: targetTheme });
+        applyTheme(targetTheme);
+    }
+
+    function initTheme() {
+        let savedTheme = null;
+        try {
+            savedTheme = localStorage.getItem('theme') || sessionStorage.getItem('theme');
+        } catch (e) {}
+
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+            applyTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            applyTheme('light');
+        } else {
+            applyTheme('dark');
+        }
+    }
+
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+
+    // Listen for theme sync from parent window / iframe
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'theme-change' && (e.data.theme === 'light' || e.data.theme === 'dark')) {
+            applyTheme(e.data.theme);
+        }
+    });
+
+    initTheme();
+
+    window.applyTheme = applyTheme;
+    window.toggleTheme = toggleTheme;
+    window.trackEvent = trackEvent;
 });
+
 
