@@ -10,8 +10,8 @@ function trackEvent(eventName, eventData = {}) {
 }
 
 function updateThemeButton(theme) {
-    const toggleBtn = document.getElementById('theme-toggle-btn');
-    if (toggleBtn) {
+    const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
+    toggleBtns.forEach(toggleBtn => {
         if (theme === 'light') {
             toggleBtn.textContent = '🌙';
             toggleBtn.setAttribute('title', 'Switch to Dark Theme');
@@ -21,7 +21,7 @@ function updateThemeButton(theme) {
             toggleBtn.setAttribute('title', 'Switch to Light Theme');
             toggleBtn.setAttribute('aria-label', 'Switch to Light Theme');
         }
-    }
+    });
 }
 
 function applyTheme(theme) {
@@ -84,10 +84,10 @@ window.initTheme = initTheme;
 
 function setupThemeListeners() {
     initTheme();
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) {
+    const btns = document.querySelectorAll('.theme-toggle-btn');
+    btns.forEach(btn => {
         btn.onclick = toggleTheme;
-    }
+    });
 }
 
 // Listen for storage changes from other tabs or parent window
@@ -129,6 +129,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let isEdited = false;
     let isDrawing = false;
     let drawValue = 0;
+    let openDrawer = null;
+    let closeDrawer = null;
+
+    const updateHasImageState = () => {
+        if (digiImage) {
+            document.body.classList.add('has-image');
+        } else {
+            document.body.classList.remove('has-image');
+        }
+    };
+    updateHasImageState();
     
     // --- DOM Elements ---
     const digiDropZone = document.getElementById('digitizer-drop-zone');
@@ -147,6 +158,122 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnResetScan = document.getElementById('btn-reset-scan');
     const chkGridlines = document.getElementById('chk-gridlines');
     const btnAutoDetect = document.getElementById('btn-auto-detect');
+
+    // --- Canvas Zoom Controls ---
+    let sourceZoom = 1.0;
+    let previewZoom = 1.0;
+
+    const btnZoomOutSource = document.getElementById('btn-zoom-out-source');
+    const btnZoomInSource = document.getElementById('btn-zoom-in-source');
+    const zoomValSource = document.getElementById('zoom-val-source');
+
+    const btnZoomOutPreview = document.getElementById('btn-zoom-out-preview');
+    const btnZoomInPreview = document.getElementById('btn-zoom-in-preview');
+    const zoomValPreview = document.getElementById('zoom-val-preview');
+
+    function updateZoomButtonStates() {
+        const hasSource = Boolean(digiImage);
+        if (btnZoomOutSource) btnZoomOutSource.disabled = !hasSource || sourceZoom <= 0.5;
+        if (btnZoomInSource) btnZoomInSource.disabled = !hasSource || sourceZoom >= 3.0;
+        if (zoomValSource) zoomValSource.style.pointerEvents = hasSource ? 'auto' : 'none';
+
+        const hasGrid = Boolean(digitizedGrid && digitizedGrid.length > 0);
+        if (btnZoomOutPreview) btnZoomOutPreview.disabled = !hasGrid || previewZoom <= 0.5;
+        if (btnZoomInPreview) btnZoomInPreview.disabled = !hasGrid || previewZoom >= 3.0;
+        if (zoomValPreview) zoomValPreview.style.pointerEvents = hasGrid ? 'auto' : 'none';
+    }
+
+    function getCanvasFitDimensions(canvas) {
+        if (!canvas || !canvas.width || !canvas.height) return { width: 320, height: 420 };
+        const container = canvas.parentElement;
+        const padX = 32;
+        const padY = 32;
+        const availW = Math.max(160, (container && container.clientWidth ? container.clientWidth - padX : 400));
+        const availH = Math.max(160, (container && container.clientHeight ? container.clientHeight - padY : 448));
+        
+        const scale = Math.min(availW / canvas.width, availH / canvas.height);
+        return {
+            width: Math.max(20, Math.round(canvas.width * scale)),
+            height: Math.max(20, Math.round(canvas.height * scale))
+        };
+    }
+
+    function applySourceZoom(newZoom) {
+        sourceZoom = Math.max(0.5, Math.min(3.0, Math.round(newZoom * 100) / 100));
+        
+        if (canvasDigiSource && canvasDigiSource.width && canvasDigiSource.height) {
+            const fit = getCanvasFitDimensions(canvasDigiSource);
+            canvasDigiSource.style.width = `${Math.round(fit.width * sourceZoom)}px`;
+            canvasDigiSource.style.height = `${Math.round(fit.height * sourceZoom)}px`;
+        }
+        
+        if (zoomValSource) zoomValSource.textContent = `${Math.round(sourceZoom * 100)}%`;
+        updateZoomButtonStates();
+    }
+
+    function applyPreviewZoom(newZoom) {
+        previewZoom = Math.max(0.5, Math.min(3.0, Math.round(newZoom * 100) / 100));
+        
+        if (canvasDigiPreview && canvasDigiPreview.width && canvasDigiPreview.height) {
+            const fit = getCanvasFitDimensions(canvasDigiPreview);
+            canvasDigiPreview.style.width = `${Math.round(fit.width * previewZoom)}px`;
+            canvasDigiPreview.style.height = `${Math.round(fit.height * previewZoom)}px`;
+        }
+        
+        if (zoomValPreview) zoomValPreview.textContent = `${Math.round(previewZoom * 100)}%`;
+        updateZoomButtonStates();
+    }
+
+    window.addEventListener('resize', () => {
+        if (digiImage) {
+            applySourceZoom(sourceZoom);
+        }
+        if (digitizedGrid && digitizedGrid.length > 0) {
+            applyPreviewZoom(previewZoom);
+        }
+    });
+
+    if (btnZoomOutSource) {
+        btnZoomOutSource.addEventListener('click', () => applySourceZoom(sourceZoom - 0.25));
+    }
+    if (btnZoomInSource) {
+        btnZoomInSource.addEventListener('click', () => applySourceZoom(sourceZoom + 0.25));
+    }
+    if (zoomValSource) {
+        zoomValSource.addEventListener('click', () => applySourceZoom(1.0));
+    }
+
+    if (btnZoomOutPreview) {
+        btnZoomOutPreview.addEventListener('click', () => applyPreviewZoom(previewZoom - 0.25));
+    }
+    if (btnZoomInPreview) {
+        btnZoomInPreview.addEventListener('click', () => applyPreviewZoom(previewZoom + 0.25));
+    }
+    if (zoomValPreview) {
+        zoomValPreview.addEventListener('click', () => applyPreviewZoom(1.0));
+    }
+
+    if (canvasDigiSource && canvasDigiSource.parentElement) {
+        canvasDigiSource.parentElement.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (!digiImage) return;
+                applySourceZoom(sourceZoom + (e.deltaY < 0 ? 0.25 : -0.25));
+            }
+        }, { passive: false });
+    }
+
+    if (canvasDigiPreview && canvasDigiPreview.parentElement) {
+        canvasDigiPreview.parentElement.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (!digitizedGrid || digitizedGrid.length === 0) return;
+                applyPreviewZoom(previewZoom + (e.deltaY < 0 ? 0.25 : -0.25));
+            }
+        }, { passive: false });
+    }
+
+    updateZoomButtonStates();
 
     // --- Drag & Drop File Selection ---
     digiDropZone.addEventListener('dragover', (e) => {
@@ -196,7 +323,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = new Image();
             img.onload = () => {
                 digiImage = img;
+                updateHasImageState();
+                if (typeof closeDrawer === 'function') {
+                    closeDrawer();
+                }
                 
+                // Update thumbnail preview in leftside upload section
+                const thumbnailImg = document.getElementById('thumbnail-img');
+                const statusFilename = document.getElementById('status-filename');
+                const statusFilesize = document.getElementById('status-filesize');
+                const uploadStatusBox = document.getElementById('upload-status-box');
+                const dropZone = document.getElementById('digitizer-drop-zone');
+
+                if (thumbnailImg) thumbnailImg.src = e.target.result;
+                if (statusFilename) {
+                    statusFilename.textContent = file.name || 'punchcard-photo.png';
+                    statusFilename.title = file.name || 'punchcard-photo.png';
+                }
+                if (statusFilesize) {
+                    statusFilesize.textContent = formatBytes(file.size);
+                }
+                if (dropZone) dropZone.style.display = 'none';
+                if (uploadStatusBox) uploadStatusBox.style.display = 'flex';
+
                 // Scale canvas size dynamically to fit viewport (max width 540px display scale)
                 const displayWidth = Math.min(540, img.width);
                 const scale = displayWidth / img.width;
@@ -213,10 +362,76 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 setEditMode(false);
                 detectCorners();
+                applySourceZoom(1.0);
+                updateZoomButtonStates();
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    const btnChangeFile = document.getElementById('btn-change-file');
+    const btnRemoveFile = document.getElementById('btn-remove-file');
+
+    if (btnChangeFile && digiFileInput) {
+        btnChangeFile.addEventListener('click', () => {
+            digiFileInput.click();
+        });
+    }
+
+    function executeRemoveImage() {
+        digiImage = null;
+        digiHandles = [];
+        digitizedGrid = [];
+        isEdited = false;
+        activeDigiHandle = -1;
+        if (digiFileInput) digiFileInput.value = '';
+
+        // Reset canvases
+        if (canvasDigiSource) {
+            const ctx = canvasDigiSource.getContext('2d');
+            ctx.clearRect(0, 0, canvasDigiSource.width, canvasDigiSource.height);
+            canvasDigiSource.style.width = '';
+            canvasDigiSource.style.height = '';
+        }
+        const srcPlaceholder = document.getElementById('digi-src-placeholder');
+        if (srcPlaceholder) srcPlaceholder.classList.remove('hidden');
+
+        if (canvasDigiPreview) {
+            const ctx = canvasDigiPreview.getContext('2d');
+            ctx.clearRect(0, 0, canvasDigiPreview.width, canvasDigiPreview.height);
+            canvasDigiPreview.style.width = '';
+            canvasDigiPreview.style.height = '';
+        }
+        const prevPlaceholder = document.getElementById('digi-prev-placeholder');
+        if (prevPlaceholder) prevPlaceholder.classList.remove('hidden');
+
+        // Reset buttons
+        if (btnDownloadDigitized) btnDownloadDigitized.disabled = true;
+        if (btnAutoDetect) btnAutoDetect.disabled = true;
+        if (editModeStatus) editModeStatus.classList.add('hidden');
+
+        // Toggle upload box vs dropzone
+        const uploadStatusBox = document.getElementById('upload-status-box');
+        const dropZone = document.getElementById('digitizer-drop-zone');
+        if (uploadStatusBox) uploadStatusBox.style.display = 'none';
+        if (dropZone) dropZone.style.display = 'flex';
+
+        updateHasImageState();
+        updateZoomButtonStates();
+        showToast('🗑️ Photo removed', 'info');
+    }
+
+    if (btnRemoveFile) {
+        btnRemoveFile.addEventListener('click', executeRemoveImage);
     }
     
     // --- Mouse & Touch Coordinates Tracking ---
@@ -237,14 +452,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function startDrag(e) {
         if (!digiImage || digiHandles.length === 0 || isEdited) return;
         const pos = getCanvasMousePos(canvasDigiSource, e);
+        const rect = canvasDigiSource.getBoundingClientRect();
         
-        // Find closest handle within a click radius of 25px
-        let minDistance = 25;
+        // Find closest handle within a screen click radius of 28px
+        let minDistance = 28;
         let idx = -1;
         for (let i = 0; i < digiHandles.length; i++) {
-            const d = Math.hypot(pos.x - digiHandles[i].x, pos.y - digiHandles[i].y);
-            if (d < minDistance) {
-                minDistance = d;
+            const internalDist = Math.hypot(pos.x - digiHandles[i].x, pos.y - digiHandles[i].y);
+            const screenDist = internalDist * (rect.width / canvasDigiSource.width);
+            if (screenDist < minDistance) {
+                minDistance = screenDist;
                 idx = i;
             }
         }
@@ -289,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const br = digiHandles[3];
         
         const cols = parseInt(digiColsInput.value) || 24;
+        const rows = parseInt(digiRowsInput.value) || 60;
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         
         // Guidelines grid lines
@@ -434,6 +652,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             drawGridToCanvas(digitizedGrid, canvasDigiPreview);
+            applyPreviewZoom(previewZoom);
+            updateZoomButtonStates();
         } catch (err) {
             showToast('❌ Scanner error: ' + err.message, 'error');
             console.error(err);
@@ -520,22 +740,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Toast Alert display helper ---
+    let toastTimeout = null;
     function showToast(message, type = 'success') {
-        toast.querySelector('.toast-message').textContent = message;
+        if (toastTimeout) {
+            clearTimeout(toastTimeout);
+            toastTimeout = null;
+        }
+
+        const msgEl = toast.querySelector('.toast-message');
+        if (msgEl) msgEl.textContent = message;
         const icon = toast.querySelector('.toast-icon');
         
         if (type === 'success') {
-            icon.textContent = '✨';
+            if (icon) icon.textContent = '✨';
             toast.style.borderLeftColor = 'var(--accent-success)';
         } else if (type === 'error') {
-            icon.textContent = '❌';
+            if (icon) icon.textContent = '❌';
             toast.style.borderLeftColor = 'var(--accent-error)';
+        } else if (type === 'info') {
+            if (icon) icon.textContent = 'ℹ️';
+            toast.style.borderLeftColor = 'var(--cyan)';
         }
         
         toast.classList.add('show');
-        setTimeout(() => {
+        toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3500);
+            toastTimeout = null;
+        }, 3000);
     }
 
     // --- Control Lock/Unlock Helpers ---
@@ -830,6 +1061,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeModal();
             }
         });
+    }
+
+    // --- Collapsible Sidebar Sections ---
+    const togglePanelSection = (header) => {
+        const section = header.closest('.panel-section');
+        if (section) {
+            const isCollapsed = section.classList.toggle('collapsed');
+            header.setAttribute('aria-expanded', !isCollapsed);
+        }
+    };
+
+    document.addEventListener('click', (e) => {
+        const header = e.target.closest('.panel-section-header');
+        if (header) {
+            togglePanelSection(header);
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('panel-section-header')) {
+            e.preventDefault();
+            togglePanelSection(e.target);
+        }
+    });
+
+    // --- Sidebar Menu Collapse Toggle (Desktop) ---
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    const controlPanel = document.querySelector('.control-panel');
+
+    if (btnToggleSidebar && controlPanel) {
+        const updateSidebarButtonState = () => {
+            const isCollapsed = controlPanel.classList.contains('collapsed');
+            btnToggleSidebar.textContent = isCollapsed ? '▶' : '◀';
+            btnToggleSidebar.title = isCollapsed ? 'Expand Controls Sidebar' : 'Collapse Controls Sidebar';
+            btnToggleSidebar.setAttribute('aria-expanded', !isCollapsed);
+        };
+
+        btnToggleSidebar.addEventListener('click', () => {
+            controlPanel.classList.toggle('collapsed');
+            updateSidebarButtonState();
+        });
+    }
+
+    // --- Mobile Setup Drawer Toggle ---
+    const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+
+    openDrawer = () => {
+        if (controlPanel) {
+            controlPanel.classList.remove('collapsed');
+            controlPanel.classList.add('active');
+        }
+        if (drawerBackdrop) drawerBackdrop.classList.add('active');
+        document.body.classList.add('drawer-open');
+    };
+
+    closeDrawer = () => {
+        if (controlPanel) controlPanel.classList.remove('active');
+        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+        document.body.classList.remove('drawer-open');
+    };
+
+    if (btnToggleDrawer) {
+        btnToggleDrawer.addEventListener('click', openDrawer);
+    }
+    if (btnCloseDrawer) {
+        btnCloseDrawer.addEventListener('click', closeDrawer);
+    }
+    if (drawerBackdrop) {
+        drawerBackdrop.addEventListener('click', closeDrawer);
+    }
+
+    // Auto-close drawer on photo upload for convenience on mobile
+    if (digiFileInput) {
+        digiFileInput.addEventListener('change', () => {
+            if (window.innerWidth <= 1024) {
+                setTimeout(closeDrawer, 300);
+            }
+        });
+    }
+
+    // Close on Escape key press
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && controlPanel && controlPanel.classList.contains('active')) {
+            closeDrawer();
+        }
+    });
+
+    // Auto-expand mobile setup drawer if image is not uploaded yet
+    if (window.innerWidth <= 1024 && !digiImage) {
+        openDrawer();
     }
 });
 

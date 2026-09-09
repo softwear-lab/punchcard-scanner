@@ -23,10 +23,19 @@
     <!-- Umami Analytics -->
     <script defer src="https://cloud.umami.is/script.js" data-website-id="26bbc811-1931-4583-ba8a-31b474a0b76c" data-domains="softwear-lab.github.io"></script>
 
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
     <div class="app-container">
+        <!-- Mobile Navigation Top Bar -->
+        <div class="mobile-top-bar">
+            <button id="btn-toggle-drawer" class="btn-hamburger" type="button" aria-label="Open Setup Drawer">☰ Setup</button>
+            <span class="mobile-app-title">punchcard-scanner</span>
+            <div class="mobile-top-actions">
+                <button type="button" class="theme-toggle-btn" id="theme-toggle-btn-mobile" onclick="toggleTheme()" aria-label="Switch to Light Theme" title="Switch to Light Theme">☀️</button>
+            </div>
+        </div>
+
         <!-- Header -->
         <header class="app-header">
             <div class="logo-container">
@@ -42,65 +51,111 @@
         <main class="dashboard">
             <!-- Sidebar: Controls & Settings -->
             <aside class="control-panel glass">
-                <section class="panel-section">
-                    <h2><span class="step-num">1</span> Import Photo</h2>
-                    <div class="drop-zone" id="digitizer-drop-zone">
-                        <input type="file" id="digitizer-file-input" accept="image/*" class="file-input">
-                        <div class="drop-zone-content">
-                            <span class="upload-icon">📥</span>
-                            <p class="main-text">Upload Grid Photo</p>
-                            <p class="sub-text">Drag & Drop or click to browse</p>
+                <!-- Mobile Drawer Header -->
+                <div class="sidebar-mobile-header">
+                    <h3>Setup</h3>
+                    <button type="button" class="btn-close-drawer" id="btn-close-drawer" aria-label="Close Setup Drawer">✕</button>
+                </div>
+
+                <section class="panel-section" id="section-import">
+                    <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
+                        <h2><span class="step-num">1</span> Import Photo</h2>
+                        <span class="step-chevron">▼</span>
+                    </div>
+                    <div class="panel-section-body">
+                        <div class="drop-zone" id="digitizer-drop-zone">
+                            <input type="file" id="digitizer-file-input" accept="image/*" class="file-input">
+                            <div class="drop-zone-content">
+                                <span class="upload-icon">📥</span>
+                                <p class="main-text">Upload Grid Photo</p>
+                                <p class="sub-text">Drag & Drop or click to browse</p>
+                            </div>
+                        </div>
+
+                        <!-- Upload Status Box (Thumbnail Preview) -->
+                        <div class="upload-status" id="upload-status-box" style="display: none;">
+                            <div class="status-details">
+                                <div class="status-thumbnail-wrapper">
+                                    <img id="thumbnail-img" src="" alt="Photo thumbnail">
+                                </div>
+                                <div class="status-meta">
+                                    <span class="status-filename" id="status-filename"></span>
+                                    <span class="status-filesize" id="status-filesize"></span>
+                                </div>
+                            </div>
+                            <div class="status-actions">
+                                <button type="button" class="btn btn-secondary btn-xs" id="btn-change-file" title="Change photo">Change</button>
+                                <button type="button" class="btn-remove-file" id="btn-remove-file" title="Remove photo" aria-label="Remove photo">✕</button>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <section class="panel-section">
-                    <h2><span class="step-num">2</span> Grid Size</h2>
-                    <div class="gauge-inputs">
-                        <div class="input-pair">
-                            <label>Columns (Stitches)</label>
-                            <input type="number" id="digi-cols" value="24" min="2" max="200">
-                        </div>
-                        <div class="input-pair">
-                            <label>Rows (Height)</label>
-                            <input type="number" id="digi-rows" value="60" min="2" max="500">
+                <section class="panel-section" id="section-grid">
+                    <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
+                        <h2><span class="step-num">2</span> Grid Size</h2>
+                        <span class="step-chevron">▼</span>
+                    </div>
+                    <div class="panel-section-body">
+                        <div class="gauge-inputs">
+                            <div class="input-pair">
+                                <label>Columns (Stitches)</label>
+                                <input type="number" id="digi-cols" value="24" min="2" max="200">
+                            </div>
+                            <div class="input-pair">
+                                <label>Rows (Height)</label>
+                                <input type="number" id="digi-rows" value="60" min="2" max="500">
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <section class="panel-section">
-                    <h2><span class="step-num">3</span> Image Tuning</h2>
-                    <div class="slider-control">
-                        <div class="slider-header">
-                            <span>Scan Threshold</span>
-                            <span id="digi-threshold-val">128</span>
-                        </div>
-                        <input type="range" id="digi-threshold-slider" min="0" max="255" value="128">
+                <section class="panel-section" id="section-tuning">
+                    <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
+                        <h2><span class="step-num">3</span> Image Tuning</h2>
+                        <span class="step-chevron">▼</span>
                     </div>
-
-                    <div class="slider-control">
-                        <div class="slider-header">
-                            <span>Sampling Width</span>
-                            <span id="digi-radius-val">3px</span>
+                    <div class="panel-section-body">
+                        <div class="slider-control">
+                            <div class="slider-header">
+                                <span>Scan Threshold</span>
+                                <span id="digi-threshold-val">128</span>
+                            </div>
+                            <input type="range" id="digi-threshold-slider" min="0" max="255" value="128">
                         </div>
-                        <input type="range" id="digi-radius-slider" min="1" max="15" value="3">
+
+                        <div class="slider-control">
+                            <div class="slider-header">
+                                <span>Sampling Width</span>
+                                <span id="digi-radius-val">3px</span>
+                            </div>
+                            <input type="range" id="digi-radius-slider" min="1" max="15" value="3">
+                        </div>
                     </div>
                 </section>
 
-                <section class="panel-section">
-                    <h2><span class="step-num">4</span> Export Grid</h2>
-                    <div class="export-actions">
-                        <button class="btn btn-primary" id="btn-download-digitized" disabled>
-                            <span class="btn-icon">💾</span> Download Scanned PNG
-                        </button>
+                <section class="panel-section" id="section-export">
+                    <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
+                        <h2><span class="step-num">4</span> Export Grid</h2>
+                        <span class="step-chevron">▼</span>
                     </div>
-                    <p class="info-note">Downloads a 1-bit indexed B&W PNG at exactly the specified columns x rows size (e.g. 24x60 pixels).</p>
+                    <div class="panel-section-body">
+                        <div class="export-actions">
+                            <button class="btn btn-primary" id="btn-download-digitized" disabled>
+                                <span class="btn-icon">💾</span> Download Scanned PNG
+                            </button>
+                        </div>
+                        <p class="info-note">Downloads a 1-bit indexed B&W PNG at exactly the specified columns x rows size (e.g. 24x60 pixels).</p>
+                    </div>
                 </section>
                 
                 <footer class="sidebar-footer">
                     <button class="nav-link" id="btn-help" type="button">❓ Help & Instructions</button>
                 </footer>
             </aside>
+
+            <!-- Sidebar Toggle Button -->
+            <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" type="button" title="Collapse Controls Sidebar" aria-label="Toggle Controls Sidebar">◀</button>
 
             <!-- Main Workspace: Corner Calibrator & Preview -->
             <div class="workspace-area">
@@ -112,6 +167,11 @@
                                 <p class="card-desc">Drag the circular handles to the corners of the grid in your photo.</p>
                             </div>
                             <div class="preview-header-actions">
+                                <div class="zoom-controls">
+                                    <button id="btn-zoom-out-source" class="zoom-btn" title="Zoom Out" type="button" aria-label="Zoom Out" disabled>−</button>
+                                    <button id="zoom-val-source" class="zoom-val" title="Click to reset zoom (100%)" type="button">100%</button>
+                                    <button id="btn-zoom-in-source" class="zoom-btn" title="Zoom In" type="button" aria-label="Zoom In" disabled>+</button>
+                                </div>
                                 <button id="btn-auto-detect" class="btn btn-secondary btn-xs" type="button" disabled>Auto-Detect</button>
                             </div>
                         </div>
@@ -128,6 +188,11 @@
                                 <p class="card-desc">Calculated binary cells. Darker areas become black pixels.</p>
                             </div>
                             <div class="preview-header-actions">
+                                <div class="zoom-controls">
+                                    <button id="btn-zoom-out-preview" class="zoom-btn" title="Zoom Out" type="button" aria-label="Zoom Out" disabled>−</button>
+                                    <button id="zoom-val-preview" class="zoom-val" title="Click to reset zoom (100%)" type="button">100%</button>
+                                    <button id="btn-zoom-in-preview" class="zoom-btn" title="Zoom In" type="button" aria-label="Zoom In" disabled>+</button>
+                                </div>
                                 <label class="checkbox-container">
                                     <input type="checkbox" id="chk-gridlines" checked>
                                     <span class="checkbox-label">Show Gridlines</span>
@@ -215,6 +280,9 @@
         <span class="toast-message">Image loaded successfully!</span>
     </div>
 
-    <script src="app.js?v=4"></script>
+    <!-- Drawer Backdrop Overlay -->
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+    <script src="app.js?v=17"></script>
 </body>
 </html>
