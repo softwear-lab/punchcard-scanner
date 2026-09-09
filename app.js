@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = parseInt(digiRowsInput.value) || 60;
         
         // Guidelines grid lines
-        ctx.strokeStyle = 'rgba(0, 242, 254, 0.35)'; // teal grid overlay
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'; // cyan grid overlay
         ctx.lineWidth = 1.0;
         
         // Columns
@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
         }
         
-        // Boundary border (red)
-        ctx.strokeStyle = 'rgba(255, 61, 0, 0.8)';
+        // Boundary border (rose)
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.85)';
         ctx.lineWidth = 2.0;
         ctx.beginPath();
         ctx.moveTo(tl.x, tl.y);
@@ -214,8 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Drag handles
         digiHandles.forEach((h, idx) => {
-            ctx.fillStyle = activeDigiHandle === idx ? '#ff3d00' : '#00f2fe';
-            ctx.strokeStyle = '#ffffff';
+            ctx.fillStyle = activeDigiHandle === idx ? '#f43f5e' : '#38bdf8';
+            ctx.strokeStyle = '#0d1117';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(h.x, h.y, 8, 0, 2 * Math.PI);
@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
             
             // Labels
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 10px Inter';
+            ctx.fillStyle = '#f0f6fc';
+            ctx.font = 'bold 11px "JetBrains Mono", monospace';
             ctx.shadowColor = '#000000';
             ctx.shadowBlur = 4;
             ctx.fillText(h.label, h.x + 10, h.y + 4);
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Draw gridlines overlay if toggle is checked
         if (chkGridlines && chkGridlines.checked && pixelScale >= 4) {
-            ctx.strokeStyle = 'rgba(164, 176, 190, 0.3)';
+            ctx.strokeStyle = 'rgba(110, 118, 129, 0.35)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             // Vertical lines
