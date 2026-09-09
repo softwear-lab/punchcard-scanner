@@ -89,6 +89,19 @@ html[data-theme="light"],
 [data-theme="light"] .theme-toggle-btn:hover {
     border-color: #0969da;
     color: #0969da;
+    background: #f3f4f6;
+}
+
+[data-theme="light"] input[type="range"] {
+    background: #d0d7de;
+}
+
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb:hover {
+    background: #0969da;
+}
+
+[data-theme="light"] .modal-overlay {
+    background: rgba(246, 248, 250, 0.85);
 }
 
 /* Theme Toggle Button */
@@ -579,7 +592,7 @@ button.nav-link {
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: #30363d;
+    background: var(--border);
     border-color: var(--text-secondary);
 }
 
@@ -666,7 +679,7 @@ button.nav-link {
 .checkbox-container input[type="checkbox"]:checked::after {
     content: "✓";
     font-size: 10px;
-    color: var(--bg-primary);
+    color: #ffffff;
     font-weight: 800;
 }
 
