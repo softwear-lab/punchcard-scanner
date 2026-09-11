@@ -23,7 +23,7 @@
     <!-- Umami Analytics -->
     <script defer src="https://cloud.umami.is/script.js" data-website-id="26bbc811-1931-4583-ba8a-31b474a0b76c" data-domains="softwear-lab.github.io"></script>
 
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body>
     <div class="app-container">
@@ -91,9 +91,44 @@
                     </div>
                 </section>
 
+                <section class="panel-section" id="section-pattern-type">
+                    <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
+                        <h2><span class="step-num">2</span> Pattern Type</h2>
+                        <span class="step-chevron">▼</span>
+                    </div>
+                    <div class="panel-section-body">
+                        <div class="pattern-type-selector" role="radiogroup" aria-label="Pattern Type">
+                            <label class="pattern-type-option active" data-type="punchcard">
+                                <input type="radio" name="pattern-type" value="punchcard" checked>
+                                <span class="pattern-type-icon">🕳️</span>
+                                <div class="pattern-type-info">
+                                    <span class="pattern-type-title">Punchcard</span>
+                                    <span class="pattern-type-desc">Holes in grid</span>
+                                </div>
+                            </label>
+                            <label class="pattern-type-option" data-type="cross_stitch">
+                                <input type="radio" name="pattern-type" value="cross_stitch">
+                                <span class="pattern-type-icon">❌</span>
+                                <div class="pattern-type-info">
+                                    <span class="pattern-type-title">Cross Stitch</span>
+                                    <span class="pattern-type-desc">Cross (X) / mark in square</span>
+                                </div>
+                            </label>
+                            <label class="pattern-type-option" data-type="filet">
+                                <input type="radio" name="pattern-type" value="filet">
+                                <span class="pattern-type-icon">⬛</span>
+                                <div class="pattern-type-info">
+                                    <span class="pattern-type-title">Crochet Filet</span>
+                                    <span class="pattern-type-desc">Solid filled square</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="panel-section" id="section-grid">
                     <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
-                        <h2><span class="step-num">2</span> Grid Size</h2>
+                        <h2><span class="step-num">3</span> Grid Size</h2>
                         <span class="step-chevron">▼</span>
                     </div>
                     <div class="panel-section-body">
@@ -112,31 +147,70 @@
 
                 <section class="panel-section" id="section-tuning">
                     <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
-                        <h2><span class="step-num">3</span> Image Tuning</h2>
+                        <h2><span class="step-num">4</span> Image Tuning</h2>
                         <span class="step-chevron">▼</span>
                     </div>
                     <div class="panel-section-body">
-                        <div class="slider-control">
+                        <div class="slider-control" id="control-threshold">
                             <div class="slider-header">
-                                <span>Scan Threshold</span>
+                                <span id="lbl-threshold">Scan Threshold</span>
                                 <span id="digi-threshold-val">128</span>
                             </div>
                             <input type="range" id="digi-threshold-slider" min="0" max="255" value="128">
                         </div>
 
-                        <div class="slider-control">
+                        <!-- Punchcard: Sampling Width -->
+                        <div class="slider-control" id="control-radius">
                             <div class="slider-header">
                                 <span>Sampling Width</span>
                                 <span id="digi-radius-val">3px</span>
                             </div>
                             <input type="range" id="digi-radius-slider" min="1" max="15" value="3">
                         </div>
+
+                        <!-- Cross Stitch: Mark Sensitivity -->
+                        <div class="slider-control hidden" id="control-sensitivity">
+                            <div class="slider-header">
+                                <span>Mark Sensitivity</span>
+                                <span id="digi-sensitivity-val">15%</span>
+                            </div>
+                            <input type="range" id="digi-sensitivity-slider" min="5" max="60" value="15">
+                            <span class="slider-hint">Min stroke coverage to detect stitch</span>
+                        </div>
+
+                        <!-- Crochet Filet: Fill Coverage -->
+                        <div class="slider-control hidden" id="control-coverage">
+                            <div class="slider-header">
+                                <span>Fill Coverage</span>
+                                <span id="digi-coverage-val">40%</span>
+                            </div>
+                            <input type="range" id="digi-coverage-slider" min="15" max="85" value="40">
+                            <span class="slider-hint">Min square fill to count as solid mesh</span>
+                        </div>
+
+                        <!-- Cross Stitch & Filet: Border Inset Margin -->
+                        <div class="slider-control hidden" id="control-margin">
+                            <div class="slider-header">
+                                <span>Border Inset Margin</span>
+                                <span id="digi-margin-val">18%</span>
+                            </div>
+                            <input type="range" id="digi-margin-slider" min="5" max="35" value="18">
+                            <span class="slider-hint">Insets sampling to ignore chart gridlines</span>
+                        </div>
+
+                        <!-- Invert Polarity Checkbox -->
+                        <div class="tuning-toggle-row">
+                            <label class="checkbox-container" title="Invert binary values (treat light areas as marked stitches)">
+                                <input type="checkbox" id="chk-invert">
+                                <span class="checkbox-label">Invert Polarity (Light on Dark)</span>
+                            </label>
+                        </div>
                     </div>
                 </section>
 
                 <section class="panel-section" id="section-export">
                     <div class="panel-section-header" tabindex="0" role="button" aria-expanded="true">
-                        <h2><span class="step-num">4</span> Export Grid</h2>
+                        <h2><span class="step-num">5</span> Export Grid</h2>
                         <span class="step-chevron">▼</span>
                     </div>
                     <div class="panel-section-body">
@@ -227,47 +301,65 @@
                     </div>
                 </div>
                 <div class="help-step">
+                    <span class="help-emoji">🎨</span>
+                    <div class="help-text">
+                        <h3>2. Choose Pattern Type</h3>
+                        <p>Select how the pattern marks are represented:
+                            <br>• <strong>🕳️ Punchcard</strong>: Circular punched holes in card cells (uses central radial sampling).
+                            <br>• <strong>❌ Cross Stitch</strong>: Crosses ('X'), plusses ('+'), or stitch symbols inside cells (uses stroke/cross analysis and margin inset to ignore chart gridlines).
+                            <br>• <strong>⬛ Crochet Filet</strong>: Solid filled squares vs empty mesh (evaluates overall cell fill coverage).
+                        </p>
+                    </div>
+                </div>
+                <div class="help-step">
                     <span class="help-emoji">📏</span>
                     <div class="help-text">
-                        <h3>2. Set Grid Size</h3>
-                        <p>Enter the exact columns (stitches) and rows (height) of your physical punchcard (e.g., 24 columns for standard Brother punchcards).</p>
+                        <h3>3. Set Grid Size</h3>
+                        <p>Enter the exact columns (stitches) and rows (height) of your physical chart or punchcard.</p>
                     </div>
                 </div>
                 <div class="help-step">
                     <span class="help-emoji">📍</span>
                     <div class="help-text">
-                        <h3>3. Align Corner Pins</h3>
+                        <h3>4. Align Corner Pins</h3>
                         <p>The app will attempt to automatically find the grid corners on upload. You can re-trigger this with the <strong>Auto-Detect</strong> button, or manually drag the handles (TL, TR, BL, BR) for pixel-perfect alignment.</p>
                     </div>
                 </div>
                 <div class="help-step">
                     <span class="help-emoji">⚙️</span>
                     <div class="help-text">
-                        <h3>4. Image Tuning</h3>
-                        <p>Adjust the <strong>Scan Threshold</strong> (darkness cutoff) and <strong>Sampling Width</strong> (pixel averaging size) until the preview correctly detects your card's holes.</p>
+                        <h3>5. Image Tuning</h3>
+                        <p>The tuning controls adapt to your selected pattern type:
+                            <br>• <strong>Scan Threshold</strong>: Brightness cutoff between dark marks and background.
+                            <br>• <strong>Sampling Width</strong> (Punchcard): Pixel radius sampled at the hole center.
+                            <br>• <strong>Mark Sensitivity</strong> (Cross Stitch): Minimum stroke coverage inside the cell required to detect a cross/stitch.
+                            <br>• <strong>Fill Coverage</strong> (Crochet Filet): Percentage of the square that must be filled to classify as solid block.
+                            <br>• <strong>Border Margin</strong> (Cross Stitch & Filet): Insets sampling from the edge to ignore chart gridlines.
+                            <br>• <strong>Invert Polarity</strong>: Toggle when marks are lighter than the background (e.g. backlit holes, negative charts).
+                        </p>
                     </div>
                 </div>
                 <div class="help-step">
                     <span class="help-emoji">✏️</span>
                     <div class="help-text">
-                        <h3>5. Manual Corrections (Optional)</h3>
+                        <h3>6. Manual Corrections (Optional)</h3>
                         <p>Click any cell in the preview grid to toggle its value, or click-and-drag to paint/erase multiple cells. This activates <strong>Edit Mode</strong>, locking calibration handles and settings to safeguard your edits. Click <strong>Reset to Scan</strong> to discard your manual edits and unlock controls.</p>
                     </div>
                 </div>
                 <div class="help-step">
                     <span class="help-emoji">💾</span>
                     <div class="help-text">
-                        <h3>6. Export Grid</h3>
-                        <p>Download the scanned PNG. The exported image will be exactly the specified dimensions in pixels (e.g. 24x60), ready for AYAB mapping!</p>
+                        <h3>7. Export Grid</h3>
+                        <p>Download the scanned PNG. The exported image will be exactly the specified dimensions in pixels (e.g. 24x60), ready for AYAB mapping or knitting machine software!</p>
                     </div>
                 </div>
-                <!-- Tips for Auto-Detection -->
+                <!-- Tips for Auto-Detection & Patterns -->
                 <div class="help-tips">
-                    <h4>💡 Tips for Best Auto-Detection</h4>
+                    <h4>💡 Tips for Different Pattern Types</h4>
                     <ul>
-                        <li><strong>Contrasting Background</strong>: Place your light-colored punchcard on a dark table or surface.</li>
-                        <li><strong>Good Lighting</strong>: Avoid heavy shadows or bright glares over the card's corners.</li>
-                        <li><strong>Full View</strong>: Ensure all four corners are completely visible inside the photo frame.</li>
+                        <li><strong>Cross Stitch Charts</strong>: If chart dividing gridlines are being falsely detected as stitches, increase the <em>Border Inset Margin</em>. If faint crosses are missed, lower <em>Mark Sensitivity</em> or increase <em>Threshold</em>.</li>
+                        <li><strong>Crochet Filet Charts</strong>: Adjust <em>Fill Coverage</em> (default 40%) to cleanly distinguish solid blocks from open mesh, even on textured paper.</li>
+                        <li><strong>Auto-Detection</strong>: Place cards or charts on a high-contrast background with good, even lighting and all 4 corners visible.</li>
                     </ul>
                 </div>
             </div>
@@ -283,6 +375,6 @@
     <!-- Drawer Backdrop Overlay -->
     <div class="drawer-backdrop" id="drawer-backdrop"></div>
 
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
 </body>
 </html>

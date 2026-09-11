@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let drawValue = 0;
     let openDrawer = null;
     let closeDrawer = null;
+    let currentPatternType = 'punchcard';
 
     const updateHasImageState = () => {
         if (digiImage) {
@@ -150,6 +151,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const digiThresholdVal = document.getElementById('digi-threshold-val');
     const digiRadiusSlider = document.getElementById('digi-radius-slider');
     const digiRadiusVal = document.getElementById('digi-radius-val');
+
+    // Pattern Type & Dynamic Tuning Elements
+    const patternTypeCards = document.querySelectorAll('.pattern-type-option');
+    const patternTypeRadios = document.querySelectorAll('input[name="pattern-type"]');
+    const lblThreshold = document.getElementById('lbl-threshold');
+    const controlRadius = document.getElementById('control-radius');
+    const controlSensitivity = document.getElementById('control-sensitivity');
+    const controlCoverage = document.getElementById('control-coverage');
+    const controlMargin = document.getElementById('control-margin');
+    const digiSensitivitySlider = document.getElementById('digi-sensitivity-slider');
+    const digiSensitivityVal = document.getElementById('digi-sensitivity-val');
+    const digiCoverageSlider = document.getElementById('digi-coverage-slider');
+    const digiCoverageVal = document.getElementById('digi-coverage-val');
+    const digiMarginSlider = document.getElementById('digi-margin-slider');
+    const digiMarginVal = document.getElementById('digi-margin-val');
+    const chkInvert = document.getElementById('chk-invert');
+
     const canvasDigiSource = document.getElementById('canvas-digitizer-source');
     const canvasDigiPreview = document.getElementById('canvas-digitizer-preview');
     const btnDownloadDigitized = document.getElementById('btn-download-digitized');
@@ -299,11 +317,87 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // --- Pattern Type Switching & Tuning Handlers ---
+    function setPatternType(newType) {
+        if (newType === currentPatternType) return;
+        currentPatternType = newType;
+
+        patternTypeCards.forEach(card => {
+            const isMatch = card.getAttribute('data-type') === newType;
+            card.classList.toggle('active', isMatch);
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.checked = isMatch;
+        });
+
+        if (newType === 'punchcard') {
+            if (lblThreshold) lblThreshold.textContent = 'Scan Threshold';
+            if (controlRadius) controlRadius.classList.remove('hidden');
+            if (controlSensitivity) controlSensitivity.classList.add('hidden');
+            if (controlCoverage) controlCoverage.classList.add('hidden');
+            if (controlMargin) controlMargin.classList.add('hidden');
+        } else if (newType === 'cross_stitch') {
+            if (lblThreshold) lblThreshold.textContent = 'Ink Darkness Threshold';
+            if (controlRadius) controlRadius.classList.add('hidden');
+            if (controlSensitivity) controlSensitivity.classList.remove('hidden');
+            if (controlCoverage) controlCoverage.classList.add('hidden');
+            if (controlMargin) controlMargin.classList.remove('hidden');
+        } else if (newType === 'filet') {
+            if (lblThreshold) lblThreshold.textContent = 'Fill Darkness Threshold';
+            if (controlRadius) controlRadius.classList.add('hidden');
+            if (controlSensitivity) controlSensitivity.classList.add('hidden');
+            if (controlCoverage) controlCoverage.classList.remove('hidden');
+            if (controlMargin) controlMargin.classList.remove('hidden');
+        }
+
+        if (digiImage) {
+            digitize();
+            drawDigitizerOverlay();
+        }
+
+        const typeLabels = {
+            punchcard: 'Punchcard (Holes)',
+            cross_stitch: 'Cross Stitch (X in square)',
+            filet: 'Crochet Filet (Filled square)'
+        };
+        showToast(`🎨 Mode: ${typeLabels[newType] || newType}`, 'info');
+    }
+
+    patternTypeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            if (isEdited) return;
+            const type = card.getAttribute('data-type');
+            if (type) {
+                setPatternType(type);
+                trackEvent('select-pattern-type', { patternType: type });
+            }
+        });
+    });
+
+    patternTypeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (isEdited) return;
+            if (e.target.checked) {
+                setPatternType(e.target.value);
+                trackEvent('select-pattern-type', { patternType: e.target.value });
+            }
+        });
+    });
+
     // --- Form Controls Listeners ---
-    [digiColsInput, digiRowsInput, digiThresholdSlider, digiRadiusSlider].forEach(el => {
+    const tuningSliders = [
+        { el: digiColsInput, valEl: null, suffix: '' },
+        { el: digiRowsInput, valEl: null, suffix: '' },
+        { el: digiThresholdSlider, valEl: digiThresholdVal, suffix: '' },
+        { el: digiRadiusSlider, valEl: digiRadiusVal, suffix: 'px' },
+        { el: digiSensitivitySlider, valEl: digiSensitivityVal, suffix: '%' },
+        { el: digiCoverageSlider, valEl: digiCoverageVal, suffix: '%' },
+        { el: digiMarginSlider, valEl: digiMarginVal, suffix: '%' }
+    ];
+
+    tuningSliders.forEach(({ el, valEl, suffix }) => {
+        if (!el) return;
         el.addEventListener('input', () => {
-            if (el === digiThresholdSlider) digiThresholdVal.textContent = el.value;
-            if (el === digiRadiusSlider) digiRadiusVal.textContent = el.value + 'px';
+            if (valEl) valEl.textContent = el.value + suffix;
             
             if (digiImage) {
                 digitize();
@@ -311,6 +405,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    if (chkInvert) {
+        chkInvert.addEventListener('change', () => {
+            if (digiImage) {
+                digitize();
+            }
+        });
+    }
 
     function handleDigitizerFile(file) {
         if (!file.type.startsWith('image/')) {
@@ -582,6 +684,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = parseInt(digiRowsInput.value) || 60;
             const threshold = parseInt(digiThresholdSlider.value) || 128;
             const radius = parseInt(digiRadiusSlider.value) || 3;
+            const sensitivity = (parseInt(digiSensitivitySlider ? digiSensitivitySlider.value : 15) || 15) / 100;
+            const coverage = (parseInt(digiCoverageSlider ? digiCoverageSlider.value : 40) || 40) / 100;
+            const margin = (parseInt(digiMarginSlider ? digiMarginSlider.value : 18) || 18) / 100;
+            const invert = Boolean(chkInvert && chkInvert.checked);
             
             // Offscreen high-res canvas
             const offCanvas = document.createElement('canvas');
@@ -591,61 +697,151 @@ document.addEventListener('DOMContentLoaded', () => {
             offCtx.drawImage(digiImage, 0, 0);
             const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
             const pixels = imgData.data;
+            const imgW = digiImage.width;
+            const imgH = digiImage.height;
             
             // Scale handles back to image space coordinates
-            const scaleX = digiImage.width / canvasDigiSource.width;
-            const scaleY = digiImage.height / canvasDigiSource.height;
+            const scaleX = imgW / canvasDigiSource.width;
+            const scaleY = imgH / canvasDigiSource.height;
             
             const qTL = { x: digiHandles[0].x * scaleX, y: digiHandles[0].y * scaleY };
             const qTR = { x: digiHandles[1].x * scaleX, y: digiHandles[1].y * scaleY };
             const qBL = { x: digiHandles[2].x * scaleX, y: digiHandles[2].y * scaleY };
             const qBR = { x: digiHandles[3].x * scaleX, y: digiHandles[3].y * scaleY };
             
+            const mapUVtoXY = (u, v) => {
+                const topX = qTL.x * (1 - u) + qTR.x * u;
+                const topY = qTL.y * (1 - u) + qTR.y * u;
+                const botX = qBL.x * (1 - u) + qBR.x * u;
+                const botY = qBL.y * (1 - u) + qBR.y * u;
+                return {
+                    x: Math.round(topX * (1 - v) + botX * v),
+                    y: Math.round(topY * (1 - v) + botY * v)
+                };
+            };
+
+            const getLuminance = (x, y) => {
+                if (x < 0 || x >= imgW || y < 0 || y >= imgH) return 255;
+                const idx = (y * imgW + x) * 4;
+                return 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
+            };
+
             digitizedGrid = [];
             
             for (let r = 0; r < rows; r++) {
                 const gridRow = [];
-                const v = (r + 0.5) / rows;
                 
                 for (let c = 0; c < cols; c++) {
-                    const u = (c + 0.5) / cols;
-                    
-                    // Bilinear interpolation
-                    const topX = qTL.x * (1 - u) + qTR.x * u;
-                    const topY = qTL.y * (1 - u) + qTR.y * u;
-                    const botX = qBL.x * (1 - u) + qBR.x * u;
-                    const botY = qBL.y * (1 - u) + qBR.y * u;
-                    
-                    const targetX = Math.round(topX * (1 - v) + botX * v);
-                    const targetY = Math.round(topY * (1 - v) + botY * v);
-                    
-                    let rSum = 0, gSum = 0, bSum = 0;
-                    let count = 0;
-                    
-                    for (let dy = -radius; dy <= radius; dy++) {
-                        const sy = targetY + dy;
-                        if (sy < 0 || sy >= digiImage.height) continue;
-                        
-                        for (let dx = -radius; dx <= radius; dx++) {
-                            const sx = targetX + dx;
-                            if (sx < 0 || sx >= digiImage.width) continue;
-                            
-                            const pixelIdx = (sy * digiImage.width + sx) * 4;
-                            rSum += pixels[pixelIdx];
-                            gSum += pixels[pixelIdx + 1];
-                            bSum += pixels[pixelIdx + 2];
-                            count++;
-                        }
-                    }
-                    
                     let val = 0;
-                    if (count > 0) {
-                        const avgR = rSum / count;
-                        const avgG = gSum / count;
-                        const avgB = bSum / count;
-                        const gray = 0.299 * avgR + 0.587 * avgG + 0.114 * avgB;
-                        val = (gray < threshold) ? 1 : 0;
+
+                    if (currentPatternType === 'punchcard') {
+                        // 1. PUNCHCARD: Circular sampling around center of cell
+                        const u = (c + 0.5) / cols;
+                        const v = (r + 0.5) / rows;
+                        const pt = mapUVtoXY(u, v);
+                        
+                        let rSum = 0, gSum = 0, bSum = 0;
+                        let count = 0;
+                        
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            const sy = pt.y + dy;
+                            if (sy < 0 || sy >= imgH) continue;
+                            
+                            for (let dx = -radius; dx <= radius; dx++) {
+                                if (dx * dx + dy * dy > radius * radius) continue; // Circular disk mask
+                                const sx = pt.x + dx;
+                                if (sx < 0 || sx >= imgW) continue;
+                                
+                                const pixelIdx = (sy * imgW + sx) * 4;
+                                rSum += pixels[pixelIdx];
+                                gSum += pixels[pixelIdx + 1];
+                                bSum += pixels[pixelIdx + 2];
+                                count++;
+                            }
+                        }
+                        
+                        let isMarked = 0;
+                        if (count > 0) {
+                            const gray = 0.299 * (rSum / count) + 0.587 * (gSum / count) + 0.114 * (bSum / count);
+                            isMarked = (gray < threshold) ? 1 : 0;
+                        }
+                        val = invert ? (1 - isMarked) : isMarked;
+
+                    } else if (currentPatternType === 'cross_stitch') {
+                        // 2. CROSS STITCH: Stroke & diagonal cross analysis inside margin-inset cell
+                        // Margin insets sample away from printed chart grid lines
+                        const u0 = (c + margin) / cols;
+                        const u1 = (c + 1 - margin) / cols;
+                        const v0 = (r + margin) / rows;
+                        const v1 = (r + 1 - margin) / rows;
+
+                        let darkPoints = 0;
+                        let diagDarkPoints = 0;
+                        let plusDarkPoints = 0;
+                        const steps = 7; // 7x7 sample grid inside inner cell
+                        const totalSamples = steps * steps;
+
+                        for (let j = 0; j < steps; j++) {
+                            const vSample = v0 + (v1 - v0) * (j / (steps - 1));
+                            for (let i = 0; i < steps; i++) {
+                                const uSample = u0 + (u1 - u0) * (i / (steps - 1));
+                                const pt = mapUVtoXY(uSample, vSample);
+                                const lum = getLuminance(pt.x, pt.y);
+
+                                const isPointDark = invert ? (lum > threshold) : (lum < threshold);
+                                if (isPointDark) {
+                                    darkPoints++;
+                                    if (i === j || i === (steps - 1 - j)) {
+                                        diagDarkPoints++;
+                                    }
+                                    if (i === Math.floor(steps / 2) || j === Math.floor(steps / 2)) {
+                                        plusDarkPoints++;
+                                    }
+                                }
+                            }
+                        }
+
+                        const strokeRatio = darkPoints / totalSamples;
+                        const diagTotal = (steps * 2) - 1; // 13 points
+                        const diagRatio = diagDarkPoints / diagTotal;
+                        const plusTotal = (steps * 2) - 1; // 13 points
+                        const plusRatio = plusDarkPoints / plusTotal;
+
+                        // Marked if overall stroke coverage exceeds sensitivity, or strong diagonal 'X' / '+' is detected
+                        const isMarked = (strokeRatio >= sensitivity || 
+                                          diagRatio >= Math.max(0.24, sensitivity * 1.4) || 
+                                          plusRatio >= Math.max(0.24, sensitivity * 1.4)) ? 1 : 0;
+                        val = isMarked;
+
+                    } else if (currentPatternType === 'filet') {
+                        // 3. CROCHET FILET: Area fill coverage of the square (ignoring border gridlines)
+                        const u0 = (c + margin) / cols;
+                        const u1 = (c + 1 - margin) / cols;
+                        const v0 = (r + margin) / rows;
+                        const v1 = (r + 1 - margin) / rows;
+
+                        let darkPoints = 0;
+                        const steps = 7; // 7x7 grid across inner square
+                        const totalSamples = steps * steps;
+
+                        for (let j = 0; j < steps; j++) {
+                            const vSample = v0 + (v1 - v0) * (j / (steps - 1));
+                            for (let i = 0; i < steps; i++) {
+                                const uSample = u0 + (u1 - u0) * (i / (steps - 1));
+                                const pt = mapUVtoXY(uSample, vSample);
+                                const lum = getLuminance(pt.x, pt.y);
+
+                                const isPointDark = invert ? (lum > threshold) : (lum < threshold);
+                                if (isPointDark) {
+                                    darkPoints++;
+                                }
+                            }
+                        }
+
+                        const fillRatio = darkPoints / totalSamples;
+                        val = (fillRatio >= coverage) ? 1 : 0;
                     }
+
                     gridRow.push(val);
                 }
                 digitizedGrid.push(gridRow);
@@ -786,12 +982,25 @@ document.addEventListener('DOMContentLoaded', () => {
             digiRowsInput,
             digiThresholdSlider,
             digiRadiusSlider,
+            digiSensitivitySlider,
+            digiCoverageSlider,
+            digiMarginSlider,
+            chkInvert,
             digiFileInput,
             btnAutoDetect
         ];
         
         elementsToDisable.forEach(el => {
             if (el) el.disabled = active;
+        });
+
+        patternTypeRadios.forEach(radio => {
+            radio.disabled = active;
+        });
+
+        patternTypeCards.forEach(card => {
+            if (active) card.classList.add('disabled');
+            else card.classList.remove('disabled');
         });
         
         if (active) {

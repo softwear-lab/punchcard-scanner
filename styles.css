@@ -533,6 +533,74 @@ h1, h2, h3, h4 {
     background-color: var(--bg-card-hover);
 }
 
+/* --- Pattern Type Selector --- */
+.pattern-type-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.pattern-type-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+    position: relative;
+}
+
+.pattern-type-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pattern-type-option:hover {
+    border-color: var(--cyan);
+    background: var(--bg-card-hover);
+}
+
+.pattern-type-option.active {
+    border-color: var(--cyan);
+    background: rgba(56, 189, 248, 0.08);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2);
+}
+
+[data-theme="light"] .pattern-type-option.active {
+    background: rgba(9, 105, 218, 0.08);
+    box-shadow: 0 0 0 1px rgba(9, 105, 218, 0.25);
+}
+
+.pattern-type-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.pattern-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.pattern-type-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pattern-type-desc {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
 /* --- Form Controls --- */
 .gauge-inputs {
     display: grid;
@@ -609,6 +677,21 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-webkit-slider-thumb:hover {
     background: #0284c7;
     transform: scale(1.15);
+}
+
+.slider-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+    margin-top: -0.15rem;
+}
+
+.tuning-toggle-row {
+    display: flex;
+    align-items: center;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--border);
+    margin-top: 0.15rem;
 }
 
 .export-actions {
@@ -922,7 +1005,8 @@ button.nav-link {
 
 /* Disabled styling for controls during editing */
 .control-panel input:disabled, 
-.control-panel .drop-zone.disabled {
+.control-panel .drop-zone.disabled,
+.control-panel .pattern-type-option.disabled {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
